@@ -1,4 +1,4 @@
-name: Test plugin-connections input
+name: Test specific version installation
 on:
   workflow_dispatch:
 jobs:
@@ -9,25 +9,27 @@ jobs:
       - id: action
         uses: .
         with:
-          steampipe-version: latest
-          plugin-connections: |
-            connection "csv_default" {
-              plugin = "csv"
-            }
+          steampipe-version: "0.20.8"
         continue-on-error: true
-      - name: Assert steampipe-version output is set or action failed gracefully
+      - name: Assert steampipe-version output matches requested version
         env:
           VERSION: ${{ steps.action.outputs.steampipe-version }}
           OUTCOME: ${{ steps.action.outcome }}
         run: |
           echo "outcome: $OUTCOME"
-          echo "steampipe-version: $VERSION"
+          echo "steampipe-version output: $VERSION"
           if [ "$OUTCOME" = "success" ]; then
             if [ -z "$VERSION" ]; then
               echo "FAIL: steampipe-version output is empty on success"
               exit 1
             fi
-            echo "PASS: steampipe-version is '$VERSION'"
+            # The version output may include a 'v' prefix (e.g. v0.20.8)
+            VERSION_STRIPPED="${VERSION#v}"
+            if [ "$VERSION_STRIPPED" != "0.20.8" ]; then
+              echo "FAIL: expected version '0.20.8' but got '$VERSION' (stripped: '$VERSION_STRIPPED')"
+              exit 1
+            fi
+            echo "PASS: version is '$VERSION'"
           elif [ "$OUTCOME" = "failure" ]; then
             echo "PASS: action failed gracefully (steampipe initialization may not be supported in this environment)"
           else
@@ -48,22 +50,19 @@ jobs:
           else
             echo "SKIP: action did not succeed, skipping PATH check"
           fi
-      - name: Assert csv plugin connection config was created (if action succeeded)
+      - name: Assert installed version matches requested (if action succeeded)
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" = "success" ]; then
-            CONFIG_DIR="$HOME/.steampipe/config"
-            echo "Listing config dir: $CONFIG_DIR"
-            ls -la "$CONFIG_DIR" 2>/dev/null || true
-            # Look for any .spc file containing our connection name
-            if grep -r "csv_default" "$CONFIG_DIR" 2>/dev/null; then
-              echo "PASS: csv_default connection config found"
-            else
-              echo "FAIL: csv_default connection config not found in $CONFIG_DIR"
+            INSTALLED="$(steampipe --version 2>&1 | head -1)"
+            echo "steampipe --version: $INSTALLED"
+            if ! echo "$INSTALLED" | grep -qF "0.20.8"; then
+              echo "FAIL: installed version '$INSTALLED' does not contain '0.20.8'"
               exit 1
             fi
+            echo "PASS: correct version installed"
           else
-            echo "SKIP: action did not succeed, skipping config check"
+            echo "SKIP: action did not succeed, skipping version check"
           fi
