@@ -11,7 +11,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 |---------|-----|-----------------|
 | v1.5.0 | [`v1.5.0`](https://github.com/chainguard-actions/turbot-steampipe-action-setup/tree/v1.5.0) | — |
 | v1.5.1 | [`v1.5.1`](https://github.com/chainguard-actions/turbot-steampipe-action-setup/tree/v1.5.1) | — |
-| v1.7.0 | [`v1.7.0`](https://github.com/chainguard-actions/turbot-steampipe-action-setup/tree/v1.7.0) | — |
+| v1.7.0 | [`v1.7.0`](https://github.com/chainguard-actions/turbot-steampipe-action-setup/tree/v1.7.0) | [`ea334bd`](https://github.com/turbot/steampipe-action-setup/commit/ea334bd03cc89b940db6b2daec94d0e0eab47dc0) |
 
 ## Privacy
 
