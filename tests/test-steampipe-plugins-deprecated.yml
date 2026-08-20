@@ -1,0 +1,31 @@
+name: Test steampipe-plugins deprecated input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          steampipe-version: latest
+          steampipe-plugins: |
+            steampipe plugin install steampipe
+      - name: Assert steampipe-version output is set
+        env:
+          ACTUAL: ${{ steps.action.outputs.steampipe-version }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: steampipe-version output is empty"
+            exit 1
+          fi
+          echo "PASS: steampipe-version=$ACTUAL"
+      - name: Assert steampipe is on PATH
+        run: |
+          if ! command -v steampipe >/dev/null 2>&1; then
+            echo "FAIL: steampipe not found on PATH"
+            exit 1
+          fi
+          echo "PASS: steampipe found at $(command -v steampipe)"
