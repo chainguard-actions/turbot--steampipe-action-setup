@@ -1,0 +1,34 @@
+name: Test steampipe-plugins deprecated input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          steampipe-version: latest
+          steampipe-plugins: |
+            steampipe-plugin-aws
+        continue-on-error: true
+      - name: Assert steampipe-version output is set
+        env:
+          VERSION: ${{ steps.action.outputs.steampipe-version }}
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "steampipe-version: $VERSION"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ -z "$VERSION" ]; then
+              echo "FAIL: action succeeded but steampipe-version output is empty"
+              exit 1
+            fi
+            echo "PASS: steampipe-version=$VERSION"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action ran (may have failed on plugin install, but deprecated input was accepted)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

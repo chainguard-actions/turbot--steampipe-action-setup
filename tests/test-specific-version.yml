@@ -1,4 +1,4 @@
-name: Test basic usage - install latest Steampipe
+name: Test specific version installation
 on:
   workflow_dispatch:
 jobs:
@@ -9,36 +9,35 @@ jobs:
       - id: setup
         uses: .
         continue-on-error: true
-      - name: Assert steampipe-version output or graceful failure
+        with:
+          steampipe-version: "0.20.8"
+      - name: Assert steampipe-version output matches requested version or graceful failure
         env:
           VERSION: ${{ steps.setup.outputs.steampipe-version }}
           OUTCOME: ${{ steps.setup.outcome }}
         run: |
           echo "outcome: $OUTCOME"
-          echo "steampipe-version: $VERSION"
+          echo "steampipe-version output: $VERSION"
           if [ "$OUTCOME" = "success" ]; then
             if [ -z "$VERSION" ]; then
               echo "FAIL: action succeeded but steampipe-version output is empty"
               exit 1
             fi
-            echo "PASS: steampipe-version is '$VERSION'"
-          elif [ "$OUTCOME" = "failure" ]; then
-            echo "PASS: action failed gracefully (acceptable in act environment)"
-          else
-            echo "FAIL: unexpected outcome '$OUTCOME'"
-            exit 1
-          fi
-      - name: Assert steampipe is on PATH (if action succeeded)
-        env:
-          OUTCOME: ${{ steps.setup.outcome }}
-        run: |
-          echo "outcome: $OUTCOME"
-          if [ "$OUTCOME" = "success" ]; then
+            if echo "$VERSION" | grep -qF "0.20.8"; then
+              echo "PASS: version output contains '0.20.8'"
+            else
+              echo "FAIL: expected version to contain '0.20.8', got '$VERSION'"
+              exit 1
+            fi
+            # Also verify steampipe is on PATH
             if ! command -v steampipe >/dev/null 2>&1; then
               echo "FAIL: steampipe not found on PATH after successful setup"
               exit 1
             fi
             echo "PASS: steampipe found at $(command -v steampipe)"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (acceptable in act environment)"
           else
-            echo "SKIP: action did not succeed, skipping PATH check"
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
           fi
